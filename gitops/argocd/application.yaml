@@ -6,7 +6,7 @@ metadata:
 spec:
   project: cloudopshub
   source:
-    repoURL: https://github.com/your-org/CloudOpsHub.git
+    repoURL: https://github.com/lakunzy7/CloudOpsHub.git
     targetRevision: main
     path: gitops/base
   destination:

@@ -31,7 +31,7 @@ resource "google_storage_bucket_iam_member" "public_read" {
 
 # ── Terraform State Bucket ──
 resource "google_storage_bucket" "terraform_state" {
-  name          = "cloudopshub-terraform-state"
+  name          = "${var.project_id}-cloudopshub-tf-state"
   location      = var.region
   force_destroy = false
 

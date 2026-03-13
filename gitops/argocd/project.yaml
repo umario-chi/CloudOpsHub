@@ -6,7 +6,7 @@ metadata:
 spec:
   description: CloudOpsHub infrastructure project
   sourceRepos:
-    - https://github.com/your-org/CloudOpsHub.git
+    - https://github.com/lakunzy7/CloudOpsHub.git
   destinations:
     - namespace: theepicbook
       server: https://kubernetes.default.svc

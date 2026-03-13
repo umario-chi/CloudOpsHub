@@ -30,9 +30,10 @@ resource "google_compute_instance_group" "app" {
   }
 }
 
-# ── Cloud Armor ──
+# ── Cloud Armor (requires quota, enable for production) ──
 resource "google_compute_security_policy" "app" {
-  name = "${var.project_name}-armor-${var.environment}"
+  count = var.enable_cloud_armor ? 1 : 0
+  name  = "${var.project_name}-armor-${var.environment}"
 
   rule {
     action   = "allow"
@@ -89,7 +90,7 @@ resource "google_compute_backend_service" "app" {
   port_name             = "http"
   health_checks         = [google_compute_health_check.app.id]
   load_balancing_scheme = "EXTERNAL"
-  security_policy       = google_compute_security_policy.app.id
+  security_policy       = var.enable_cloud_armor ? google_compute_security_policy.app[0].id : null
   timeout_sec           = 30
 
   log_config {

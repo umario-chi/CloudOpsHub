@@ -7,3 +7,5 @@ variable "db_password" {
 }
 variable "db_private_ip" { type = string }
 variable "db_name" { type = string }
+variable "aws_account_id" { type = string }
+variable "aws_region" { type = string }

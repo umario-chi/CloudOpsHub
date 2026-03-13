@@ -12,6 +12,7 @@ permissions:
 env:
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
   IMAGE_TAG: ${{ github.sha }}
+  ENVIRONMENT: production
 
 jobs:
 
@@ -117,22 +118,22 @@ jobs:
       - name: Build Backend image
         run: |
           cd theepicbook
-          docker build -t $ECR_REGISTRY/theepicbook-backend:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/theepicbook-backend:$IMAGE_TAG $ECR_REGISTRY/theepicbook-backend:latest
+          docker build -t $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:$IMAGE_TAG $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:latest
 
       # ── Build Frontend (Service 1: Nginx + static assets) ──
       - name: Build Frontend image
         run: |
           cp -r theepicbook/public nginx/public
           cd nginx
-          docker build -t $ECR_REGISTRY/theepicbook-frontend:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/theepicbook-frontend:$IMAGE_TAG $ECR_REGISTRY/theepicbook-frontend:latest
+          docker build -t $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:$IMAGE_TAG $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:latest
 
       # ── Trivy: Scan both images for vulnerabilities ──
       - name: Trivy scan Backend image
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.ECR_REGISTRY }}/theepicbook-backend:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.ECR_REGISTRY }}/theepicbook-backend-${{ env.ENVIRONMENT }}:${{ env.IMAGE_TAG }}
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
@@ -140,7 +141,7 @@ jobs:
       - name: Trivy scan Frontend image
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.ECR_REGISTRY }}/theepicbook-frontend:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.ECR_REGISTRY }}/theepicbook-frontend-${{ env.ENVIRONMENT }}:${{ env.IMAGE_TAG }}
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
@@ -148,10 +149,10 @@ jobs:
       # ── Push to ECR (Service 3: Database is Cloud SQL, no image needed) ──
       - name: Push Backend image to ECR
         run: |
-          docker push $ECR_REGISTRY/theepicbook-backend:$IMAGE_TAG
-          docker push $ECR_REGISTRY/theepicbook-backend:latest
+          docker push $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:$IMAGE_TAG
+          docker push $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:latest
 
       - name: Push Frontend image to ECR
         run: |
-          docker push $ECR_REGISTRY/theepicbook-frontend:$IMAGE_TAG
-          docker push $ECR_REGISTRY/theepicbook-frontend:latest
+          docker push $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:$IMAGE_TAG
+          docker push $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:latest

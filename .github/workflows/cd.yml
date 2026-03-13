@@ -10,8 +10,8 @@ permissions:
 
 env:
     ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-    ECR_REPO_BACKEND: theepicbook-backend
-    ECR_REPO_FRONTEND: theepicbook-frontend
+    ECR_REPO_BACKEND: theepicbook-backend-production
+    ECR_REPO_FRONTEND: theepicbook-frontend-production
 
 jobs:
     # ── Deploy Stage: Secure Cloud Config (Checkov + TFSec) ──

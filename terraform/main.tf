@@ -12,8 +12,11 @@ terraform {
     }
   }
 
+  # NOTE: Backend bucket name cannot use variables. Update this to match
+  # your project: "<YOUR_PROJECT_ID>-cloudopshub-tf-state"
+  # Or use: terraform init -backend-config="bucket=<YOUR_PROJECT_ID>-cloudopshub-tf-state"
   backend "gcs" {
-    bucket = "cloudopshub-terraform-state"
+    bucket = "expandox-project1-cloudopshub-tf-state"
     prefix = "terraform/state"
   }
 }
@@ -79,12 +82,14 @@ module "database" {
 module "secrets" {
   source = "./modules/secrets"
 
-  project_name  = var.project_name
-  environment   = var.environment
-  db_user       = module.database.user_name
-  db_password   = var.db_password
-  db_private_ip = module.database.private_ip
-  db_name       = module.database.database_name
+  project_name   = var.project_name
+  environment    = var.environment
+  db_user        = module.database.user_name
+  db_password    = var.db_password
+  db_private_ip  = module.database.private_ip
+  db_name        = module.database.database_name
+  aws_account_id = var.aws_account_id
+  aws_region     = var.aws_region
 
   depends_on = [google_project_service.apis]
 }
@@ -149,4 +154,6 @@ module "monitoring" {
 # ── Module: Registry (AWS ECR) ──
 module "registry" {
   source = "./modules/registry"
+
+  environment = var.environment
 }

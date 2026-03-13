@@ -1,1 +1,4 @@
-# No variables needed — repository names are fixed per microservice
+variable "environment" {
+  description = "Environment name (dev, staging, production)"
+  type        = string
+}

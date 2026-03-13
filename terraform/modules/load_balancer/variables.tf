@@ -6,3 +6,7 @@ variable "domain_name" {
   type    = string
   default = ""
 }
+variable "enable_cloud_armor" {
+  type    = bool
+  default = false
+}

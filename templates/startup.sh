@@ -98,3 +98,4 @@ for i in $(seq 1 30); do
 done
 
 echo "WARNING: Application did not become healthy within timeout"
+exit 1

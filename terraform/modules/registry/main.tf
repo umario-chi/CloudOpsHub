@@ -1,13 +1,13 @@
 # ── AWS ECR: One repository per microservice ──
 
 resource "aws_ecr_repository" "backend" {
-  name                 = "theepicbook-backend"
+  name                 = "theepicbook-backend-${var.environment}"
   image_tag_mutability = "MUTABLE"
   image_scanning_configuration { scan_on_push = true }
 }
 
 resource "aws_ecr_repository" "frontend" {
-  name                 = "theepicbook-frontend"
+  name                 = "theepicbook-frontend-${var.environment}"
   image_tag_mutability = "MUTABLE"
   image_scanning_configuration { scan_on_push = true }
 }
