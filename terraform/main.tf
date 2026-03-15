@@ -6,10 +6,6 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.0"
     }
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
   }
 
   # NOTE: Backend bucket name cannot use variables. Update this to match
@@ -27,18 +23,12 @@ provider "google" {
   region  = var.region
 }
 
-provider "aws" {
-  region = var.aws_region
-}
-
 # ── Enable Required GCP APIs ──
 resource "google_project_service" "apis" {
   for_each = toset([
     "compute.googleapis.com",
-    "sqladmin.googleapis.com",
     "storage.googleapis.com",
     "secretmanager.googleapis.com",
-    "servicenetworking.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "monitoring.googleapis.com",
     "logging.googleapis.com",
@@ -60,36 +50,21 @@ module "network" {
   environment     = var.environment
   region          = var.region
   app_subnet_cidr = var.app_subnet_cidr
-  db_subnet_cidr  = var.db_subnet_cidr
 
   depends_on = [google_project_service.apis]
-}
-
-# ── Module: Database ──
-module "database" {
-  source = "./modules/database"
-
-  project_name           = var.project_name
-  environment            = var.environment
-  region                 = var.region
-  db_tier                = var.db_tier
-  db_password            = var.db_password
-  vpc_id                 = module.network.vpc_id
-  private_vpc_connection = module.network.private_vpc_connection
 }
 
 # ── Module: Secrets ──
 module "secrets" {
   source = "./modules/secrets"
 
-  project_name   = var.project_name
-  environment    = var.environment
-  db_user        = module.database.user_name
-  db_password    = var.db_password
-  db_private_ip  = module.database.private_ip
-  db_name        = module.database.database_name
-  aws_account_id = var.aws_account_id
-  aws_region     = var.aws_region
+  project_name  = var.project_name
+  environment   = var.environment
+  db_user          = "appuser"
+  db_password      = var.db_password
+  db_private_ip    = "database"
+  db_name          = "bookstore"
+  grafana_password = var.grafana_password
 
   depends_on = [google_project_service.apis]
 }
@@ -98,15 +73,15 @@ module "secrets" {
 module "compute" {
   source = "./modules/compute"
 
-  project_id     = var.project_id
-  project_name   = var.project_name
-  environment    = var.environment
-  zone           = var.zone
-  instance_type  = var.instance_type
-  subnet_id      = module.network.app_subnet_id
-  db_secret_name = module.secrets.database_url_secret_id
-  aws_account_id = var.aws_account_id
-  aws_region     = var.aws_region
+  project_id             = var.project_id
+  project_name           = var.project_name
+  environment            = var.environment
+  zone                   = var.zone
+  instance_type          = var.instance_type
+  subnet_id              = module.network.app_subnet_id
+  db_secret_name            = module.secrets.database_url_secret_id
+  grafana_secret_name       = module.secrets.grafana_password_secret_id
+  artifact_registry_url     = module.storage.artifact_registry_url
 
   depends_on = [google_project_service.apis]
 }
@@ -149,11 +124,4 @@ module "monitoring" {
   domain_name  = var.domain_name
 
   depends_on = [google_project_service.apis]
-}
-
-# ── Module: Registry (AWS ECR) ──
-module "registry" {
-  source = "./modules/registry"
-
-  environment = var.environment
 }

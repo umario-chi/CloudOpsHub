@@ -14,17 +14,6 @@ output "service_account_email" {
   value       = module.compute.service_account_email
 }
 
-# ── Database ──
-output "cloud_sql_private_ip" {
-  description = "Cloud SQL private IP"
-  value       = module.database.private_ip
-}
-
-output "cloud_sql_connection_name" {
-  description = "Cloud SQL connection name"
-  value       = module.database.connection_name
-}
-
 # ── Secrets ──
 output "database_url_secret" {
   description = "Secret Manager secret ID for DATABASE_URL"
@@ -51,15 +40,4 @@ output "static_assets_bucket" {
 output "artifact_registry_url" {
   description = "GCP Artifact Registry URL"
   value       = module.storage.artifact_registry_url
-}
-
-# ── ECR ──
-output "ecr_backend_url" {
-  description = "AWS ECR backend repository URL"
-  value       = module.registry.backend_url
-}
-
-output "ecr_frontend_url" {
-  description = "AWS ECR frontend repository URL"
-  value       = module.registry.frontend_url
 }

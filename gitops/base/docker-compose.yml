@@ -1,14 +1,18 @@
 version: "3.8"
 
-# ── Production deployment (Cloud SQL as database) ──
-# 1. Frontend (nginx)  — static assets + reverse proxy
-# 2. Backend  (node)   — Express API + Handlebars SSR
-# 3. Database          — Cloud SQL (managed, not containerized)
+# ── Production deployment (Dockerized MySQL + Monitoring) ──
+# 1. Frontend    (nginx)        — static assets + reverse proxy
+# 2. Backend     (node)         — Express API + Handlebars SSR
+# 3. Database    (mysql)        — Dockerized MySQL with seed data
+# 4. Prometheus                 — metrics collection
+# 5. Grafana                    — dashboards + visualization
+# 6. Node Exporter              — host metrics
+# 7. Alertmanager               — alert routing
 
 services:
 
   frontend:
-    image: ${ECR_REGISTRY}/theepicbook-frontend:latest
+    image: ${REGISTRY}/theepicbook-frontend:latest
     restart: unless-stopped
     ports:
       - "80:80"
@@ -18,14 +22,89 @@ services:
       - app-network
 
   backend:
-    image: ${ECR_REGISTRY}/theepicbook-backend:latest
+    image: ${REGISTRY}/theepicbook-backend:latest
     restart: unless-stopped
     environment:
       - PORT=8080
       - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      database:
+        condition: service_healthy
     networks:
       - app-network
 
+  database:
+    image: ${REGISTRY}/theepicbook-database:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: bookstore
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    restart: unless-stopped
+    volumes:
+      - ../../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../../monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    volumes:
+      - ../../monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ../../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    restart: unless-stopped
+    volumes:
+      - ../../monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring
+
+volumes:
+  db-data:
+  prometheus-data:
+  grafana-data:
+
 networks:
   app-network:
+    driver: bridge
+  monitoring:
     driver: bridge

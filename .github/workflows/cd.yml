@@ -9,9 +9,7 @@ permissions:
     contents: write
 
 env:
-    ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-    ECR_REPO_BACKEND: theepicbook-backend-production
-    ECR_REPO_FRONTEND: theepicbook-frontend-production
+    REGISTRY: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloudopshub-docker
 
 jobs:
     # ── Deploy Stage: Secure Cloud Config (Checkov + TFSec) ──
@@ -42,19 +40,20 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: Verify images exist in ECR
-              env:
-                  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                  AWS_REGION: ${{ secrets.AWS_REGION }}
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
+              with:
+                  credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+            - name: Verify images exist in Artifact Registry
               run: |
                   IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
-                  aws ecr describe-images \
-                    --repository-name $ECR_REPO_BACKEND \
-                    --image-ids imageTag=$IMAGE_TAG
-                  aws ecr describe-images \
-                    --repository-name $ECR_REPO_FRONTEND \
-                    --image-ids imageTag=$IMAGE_TAG
+                  gcloud artifacts docker images describe \
+                    $REGISTRY/theepicbook-backend:$IMAGE_TAG
+                  gcloud artifacts docker images describe \
+                    $REGISTRY/theepicbook-frontend:$IMAGE_TAG
+                  gcloud artifacts docker images describe \
+                    $REGISTRY/theepicbook-database:$IMAGE_TAG
 
             # ── Operate Stage: Fetch secrets from HashiCorp Vault ──
             - name: Fetch secrets from Vault
@@ -71,9 +70,11 @@ jobs:
             - name: Update GitOps manifests
               run: |
                   IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
-                  sed -i "s|image:.*theepicbook-backend.*|image: $ECR_REGISTRY/$ECR_REPO_BACKEND:$IMAGE_TAG|" \
+                  sed -i "s|image:.*theepicbook-backend.*|image: $REGISTRY/theepicbook-backend:$IMAGE_TAG|" \
                     gitops/base/docker-compose.yml
-                  sed -i "s|image:.*theepicbook-frontend.*|image: $ECR_REGISTRY/$ECR_REPO_FRONTEND:$IMAGE_TAG|" \
+                  sed -i "s|image:.*theepicbook-frontend.*|image: $REGISTRY/theepicbook-frontend:$IMAGE_TAG|" \
+                    gitops/base/docker-compose.yml
+                  sed -i "s|image:.*theepicbook-database.*|image: $REGISTRY/theepicbook-database:$IMAGE_TAG|" \
                     gitops/base/docker-compose.yml
 
             - name: Commit and push manifest update

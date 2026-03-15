@@ -13,3 +13,54 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 3
+
+  database:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  prometheus:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  grafana:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  node-exporter:
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  alertmanager:
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3

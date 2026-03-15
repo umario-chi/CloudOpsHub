@@ -9,3 +9,38 @@ services:
         limits:
           memory: 512M
           cpus: "1.0"
+
+  database:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  prometheus:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  grafana:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  node-exporter:
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  alertmanager:
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"

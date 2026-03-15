@@ -40,10 +40,10 @@ resource "google_compute_instance" "app_server" {
   metadata_startup_script = templatefile("${path.module}/../../templates/startup.sh", {
     project_id     = var.project_id
     environment    = var.environment
-    ecr_registry   = "${var.aws_account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
-    ecr_repository = "theepicbook"
-    db_secret_name = var.db_secret_name
-    aws_region     = var.aws_region
+    registry_url   = var.artifact_registry_url
+    registry_host  = split("/", var.artifact_registry_url)[0]
+    db_secret_name      = var.db_secret_name
+    grafana_secret_name = var.grafana_secret_name
   })
 
   metadata = {

@@ -13,28 +13,6 @@ resource "google_compute_subnetwork" "app" {
   private_ip_google_access = true
 }
 
-resource "google_compute_subnetwork" "db" {
-  name          = "${var.project_name}-db-subnet-${var.environment}"
-  ip_cidr_range = var.db_subnet_cidr
-  region        = var.region
-  network       = google_compute_network.vpc.id
-}
-
-# ── Private Services Access (Cloud SQL private IP) ──
-resource "google_compute_global_address" "private_ip_range" {
-  name          = "${var.project_name}-private-ip-${var.environment}"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 16
-  network       = google_compute_network.vpc.id
-}
-
-resource "google_service_networking_connection" "private_vpc" {
-  network                 = google_compute_network.vpc.id
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
-}
-
 # ── Cloud Router + NAT ──
 resource "google_compute_router" "router" {
   name    = "${var.project_name}-router-${var.environment}"
@@ -100,7 +78,7 @@ resource "google_compute_firewall" "allow_internal" {
     protocol = "icmp"
   }
 
-  source_ranges = [var.app_subnet_cidr, var.db_subnet_cidr]
+  source_ranges = [var.app_subnet_cidr]
 }
 
 resource "google_compute_firewall" "allow_health_check" {

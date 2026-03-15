@@ -5,5 +5,5 @@ variable "zone" { type = string }
 variable "instance_type" { type = string }
 variable "subnet_id" { type = string }
 variable "db_secret_name" { type = string }
-variable "aws_account_id" { type = string }
-variable "aws_region" { type = string }
+variable "grafana_secret_name" { type = string }
+variable "artifact_registry_url" { type = string }

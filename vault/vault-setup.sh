@@ -6,14 +6,14 @@ vault secrets enable -path=secret kv-v2 2>/dev/null || true
 
 # Store application secrets
 vault kv put secret/cloudopshub/database \
-  DATABASE_URL="mysql://appuser:CHANGE_ME@<cloud-sql-ip>:3306/bookstore"
+  DATABASE_URL="mysql://appuser:CHANGE_ME@database:3306/bookstore"
+
+vault kv put secret/cloudopshub/db \
+  DB_PASSWORD="CHANGE_ME" \
+  DB_ROOT_PASSWORD="CHANGE_ME"
 
 vault kv put secret/cloudopshub/argocd \
   ARGOCD_AUTH_TOKEN="CHANGE_ME"
-
-vault kv put secret/cloudopshub/ecr \
-  AWS_ACCESS_KEY_ID="CHANGE_ME" \
-  AWS_SECRET_ACCESS_KEY="CHANGE_ME"
 
 vault kv put secret/cloudopshub/grafana \
   GRAFANA_PASSWORD="CHANGE_ME"

@@ -27,29 +27,11 @@ variable "environment" {
   default     = "dev"
 }
 
-# ── AWS (ECR only) ──
-variable "aws_region" {
-  description = "AWS region for ECR"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "aws_account_id" {
-  description = "AWS account ID for ECR registry"
-  type        = string
-}
-
 # ── Networking ──
 variable "app_subnet_cidr" {
   description = "CIDR range for the application subnet"
   type        = string
   default     = "10.0.1.0/24"
-}
-
-variable "db_subnet_cidr" {
-  description = "CIDR range for the database subnet"
-  type        = string
-  default     = "10.0.2.0/24"
 }
 
 # ── Compute ──
@@ -60,16 +42,17 @@ variable "instance_type" {
 }
 
 # ── Database ──
-variable "db_tier" {
-  description = "Cloud SQL machine tier"
-  type        = string
-  default     = "db-f1-micro"
-}
-
 variable "db_password" {
-  description = "Cloud SQL app user password"
+  description = "MySQL app user password"
   type        = string
   sensitive   = true
+}
+
+variable "grafana_password" {
+  description = "Grafana admin password"
+  type        = string
+  sensitive   = true
+  default     = "CloudOps-Grafana-2026!"
 }
 
 # ── DNS / SSL (optional) ──

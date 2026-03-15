@@ -10,9 +10,8 @@ permissions:
   contents: read
 
 env:
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+  REGISTRY: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloudopshub-docker
   IMAGE_TAG: ${{ github.sha }}
-  ENVIRONMENT: production
 
 jobs:
 
@@ -104,36 +103,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
       # ── Build Backend (Service 2: Node.js API + SSR) ──
       - name: Build Backend image
         run: |
           cd theepicbook
-          docker build -t $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:$IMAGE_TAG $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:latest
+          docker build -t $REGISTRY/theepicbook-backend:$IMAGE_TAG .
+          docker tag $REGISTRY/theepicbook-backend:$IMAGE_TAG $REGISTRY/theepicbook-backend:latest
 
       # ── Build Frontend (Service 1: Nginx + static assets) ──
       - name: Build Frontend image
         run: |
           cp -r theepicbook/public nginx/public
           cd nginx
-          docker build -t $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:$IMAGE_TAG $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:latest
+          docker build -t $REGISTRY/theepicbook-frontend:$IMAGE_TAG .
+          docker tag $REGISTRY/theepicbook-frontend:$IMAGE_TAG $REGISTRY/theepicbook-frontend:latest
 
-      # ── Trivy: Scan both images for vulnerabilities ──
+      # ── Build Database (Service 3: MySQL with seed data) ──
+      - name: Build Database image
+        run: |
+          cd theepicbook/db
+          docker build -t $REGISTRY/theepicbook-database:$IMAGE_TAG .
+          docker tag $REGISTRY/theepicbook-database:$IMAGE_TAG $REGISTRY/theepicbook-database:latest
+
+      # ── Trivy: Scan images for vulnerabilities ──
       - name: Trivy scan Backend image
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.ECR_REGISTRY }}/theepicbook-backend-${{ env.ENVIRONMENT }}:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.REGISTRY }}/theepicbook-backend:${{ env.IMAGE_TAG }}
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
@@ -141,18 +145,23 @@ jobs:
       - name: Trivy scan Frontend image
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.ECR_REGISTRY }}/theepicbook-frontend-${{ env.ENVIRONMENT }}:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.REGISTRY }}/theepicbook-frontend:${{ env.IMAGE_TAG }}
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
 
-      # ── Push to ECR (Service 3: Database is Cloud SQL, no image needed) ──
-      - name: Push Backend image to ECR
+      # ── Push to Artifact Registry ──
+      - name: Push Backend image
         run: |
-          docker push $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:$IMAGE_TAG
-          docker push $ECR_REGISTRY/theepicbook-backend-$ENVIRONMENT:latest
+          docker push $REGISTRY/theepicbook-backend:$IMAGE_TAG
+          docker push $REGISTRY/theepicbook-backend:latest
 
-      - name: Push Frontend image to ECR
+      - name: Push Frontend image
         run: |
-          docker push $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:$IMAGE_TAG
-          docker push $ECR_REGISTRY/theepicbook-frontend-$ENVIRONMENT:latest
+          docker push $REGISTRY/theepicbook-frontend:$IMAGE_TAG
+          docker push $REGISTRY/theepicbook-frontend:latest
+
+      - name: Push Database image
+        run: |
+          docker push $REGISTRY/theepicbook-database:$IMAGE_TAG
+          docker push $REGISTRY/theepicbook-database:latest

@@ -3,7 +3,7 @@ version: "3.8"
 # ── Microservices Architecture ──
 # 1. Frontend (nginx)  — static assets + reverse proxy
 # 2. Backend  (node)   — Express API + Handlebars SSR
-# 3. Database (mysql)  — local dev only; production uses Cloud SQL
+# 3. Database (mysql)  — local dev only; production uses Dockerized MySQL
 
 services:
 

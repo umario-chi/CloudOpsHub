@@ -2,6 +2,7 @@
 
 const express = require("express");
 const exphbs = require("express-handlebars");
+const promClient = require("prom-client");
 
 // Requiring our models for syncing
 const db = require("./models");
@@ -9,6 +10,31 @@ const db = require("./models");
 const PORT = process.env.PORT || 8080;
 
 const app = express();
+
+// ── Prometheus Metrics ──
+promClient.collectDefaultMetrics();
+
+var httpRequestDuration = new promClient.Histogram({
+  name: "http_request_duration_seconds",
+  help: "Duration of HTTP requests in seconds",
+  labelNames: ["method", "route", "statusCode"],
+  buckets: [0.01, 0.05, 0.1, 0.5, 1, 5]
+});
+
+app.use(function (req, res, next) {
+  var end = httpRequestDuration.startTimer();
+  res.on("finish", function () {
+    end({ method: req.method, route: req.path, statusCode: res.statusCode });
+  });
+  next();
+});
+
+app.get("/metrics", function (req, res) {
+  res.set("Content-Type", promClient.register.contentType);
+  promClient.register.metrics().then(function (metrics) {
+    res.end(metrics);
+  });
+});
 
 // Serve static content for the app from the "public" directory in the application directory.
 app.use(express.static("public"));
