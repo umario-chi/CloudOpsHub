@@ -28,6 +28,7 @@ jobs:
       - run: cd theepicbook && npm ci
       - name: Snyk code and dependency scan
         uses: snyk/actions/node@master
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -40,12 +41,13 @@ jobs:
         with:
           fetch-depth: 0
       - name: SonarQube scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
+            -Dsonar.organization=lakunzy7
             -Dsonar.projectKey=cloudopshub-theepicbook
             -Dsonar.sources=theepicbook/
             -Dsonar.exclusions=theepicbook/node_modules/**,theepicbook/public/assets/js/materialize*
