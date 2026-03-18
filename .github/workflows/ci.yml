@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 env:
-  REGISTRY: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloudopshub-docker
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
           cache: npm
           cache-dependency-path: theepicbook/package-lock.json
       - run: cd theepicbook && npm ci
@@ -47,6 +47,7 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=cloudopshub-theepicbook
+            -Dsonar.organization=umario-chi
             -Dsonar.sources=theepicbook/
             -Dsonar.exclusions=theepicbook/node_modules/**,theepicbook/public/assets/js/materialize*
       - name: SonarQube quality gate check
@@ -73,11 +74,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
           cache: npm
           cache-dependency-path: theepicbook/package-lock.json
       - run: cd theepicbook && npm ci
       - run: cd theepicbook && npm run lint
+      - name: npm audit
+        run: cd theepicbook && npm audit --audit-level=high
 
   docker-lint:
     runs-on: ubuntu-latest
@@ -92,7 +95,7 @@ jobs:
         with:
           dockerfile: nginx/Dockerfile
 
-  # ── Build Stage: Build, Scan, Push Docker Images (Trivy) ──
+  # ── Build Stage: Build, Scan, Push Docker Images ──
   build-and-push:
     needs: [lint, snyk-code-scan, sonarqube-scan, gitleaks, docker-lint]
     runs-on: ubuntu-latest
@@ -103,66 +106,74 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.GCP_SA_EMAIL }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
-
-      # ── Build Backend (Service 2: Node.js API + SSR) ──
+      # ── Build Backend ──
       - name: Build Backend image
         run: |
           cd theepicbook
-          docker build -t $REGISTRY/theepicbook-backend:$IMAGE_TAG .
-          docker tag $REGISTRY/theepicbook-backend:$IMAGE_TAG $REGISTRY/theepicbook-backend:latest
+          docker build -t $DOCKERHUB_USERNAME/theepicbook-backend:$IMAGE_TAG .
+          docker tag $DOCKERHUB_USERNAME/theepicbook-backend:$IMAGE_TAG $DOCKERHUB_USERNAME/theepicbook-backend:latest
 
-      # ── Build Frontend (Service 1: Nginx + static assets) ──
+      # ── Build Frontend ──
       - name: Build Frontend image
         run: |
           cp -r theepicbook/public nginx/public
           cd nginx
-          docker build -t $REGISTRY/theepicbook-frontend:$IMAGE_TAG .
-          docker tag $REGISTRY/theepicbook-frontend:$IMAGE_TAG $REGISTRY/theepicbook-frontend:latest
+          docker build -t $DOCKERHUB_USERNAME/theepicbook-frontend:$IMAGE_TAG .
+          docker tag $DOCKERHUB_USERNAME/theepicbook-frontend:$IMAGE_TAG $DOCKERHUB_USERNAME/theepicbook-frontend:latest
 
-      # ── Build Database (Service 3: MySQL with seed data) ──
+      # ── Build Database ──
       - name: Build Database image
         run: |
           cd theepicbook/db
-          docker build -t $REGISTRY/theepicbook-database:$IMAGE_TAG .
-          docker tag $REGISTRY/theepicbook-database:$IMAGE_TAG $REGISTRY/theepicbook-database:latest
+          docker build -t $DOCKERHUB_USERNAME/theepicbook-database:$IMAGE_TAG .
+          docker tag $DOCKERHUB_USERNAME/theepicbook-database:$IMAGE_TAG $DOCKERHUB_USERNAME/theepicbook-database:latest
 
-      # ── Trivy: Scan images for vulnerabilities ──
+      # ── Trivy: Scan images ──
       - name: Trivy scan Backend image
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.REGISTRY }}/theepicbook-backend:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.DOCKERHUB_USERNAME }}/theepicbook-backend:${{ env.IMAGE_TAG }}
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
+          trivyignores: .trivyignore
 
       - name: Trivy scan Frontend image
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.REGISTRY }}/theepicbook-frontend:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.DOCKERHUB_USERNAME }}/theepicbook-frontend:${{ env.IMAGE_TAG }}
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
+          trivyignores: .trivyignore
 
-      # ── Push to Artifact Registry ──
+      - name: Trivy scan Database image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.DOCKERHUB_USERNAME }}/theepicbook-database:${{ env.IMAGE_TAG }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+          trivyignores: .trivyignore
+
+      # ── Push to Docker Hub ──
       - name: Push Backend image
         run: |
-          docker push $REGISTRY/theepicbook-backend:$IMAGE_TAG
-          docker push $REGISTRY/theepicbook-backend:latest
+          docker push $DOCKERHUB_USERNAME/theepicbook-backend:$IMAGE_TAG
+          docker push $DOCKERHUB_USERNAME/theepicbook-backend:latest
 
       - name: Push Frontend image
         run: |
-          docker push $REGISTRY/theepicbook-frontend:$IMAGE_TAG
-          docker push $REGISTRY/theepicbook-frontend:latest
+          docker push $DOCKERHUB_USERNAME/theepicbook-frontend:$IMAGE_TAG
+          docker push $DOCKERHUB_USERNAME/theepicbook-frontend:latest
 
       - name: Push Database image
         run: |
-          docker push $REGISTRY/theepicbook-database:$IMAGE_TAG
-          docker push $REGISTRY/theepicbook-database:latest
+          docker push $DOCKERHUB_USERNAME/theepicbook-database:$IMAGE_TAG
+          docker push $DOCKERHUB_USERNAME/theepicbook-database:latest

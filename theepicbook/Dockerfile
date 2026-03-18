@@ -1,14 +1,15 @@
-# ── Backend Service ──
-# Handles Express API routes (/api/*) and Handlebars SSR (/, /cart, /gallery)
-
 # Stage 1: Install production dependencies
-FROM node:16-alpine AS deps
+FROM node:20-alpine AS deps
+RUN apk update && apk upgrade --no-cache
+RUN npm install -g npm@latest
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --production
 
 # Stage 2: Production image
-FROM node:16-alpine
+FROM node:20-alpine
+RUN apk update && apk upgrade --no-cache
+RUN npm install -g npm@latest
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules

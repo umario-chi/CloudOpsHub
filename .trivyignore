@@ -1,0 +1,2 @@
+# gosu binary in mysql image - compiled with Go 1.18.2, upstream unfixable
+usr/local/bin/gosu

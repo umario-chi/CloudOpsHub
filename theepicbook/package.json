@@ -21,19 +21,30 @@
   "dependencies": {
     "@handlebars/allow-prototype-access": "^1.0.3",
     "accounting": "^0.4.1",
+    "body-parser": "^1.20.3",
+    "cross-spawn": "^7.0.5",
+    "dottie": "^2.0.4",
     "eslint": "^7.4.0",
     "eslint-plugin-import": "^2.22.0",
     "express": "^4.17.1",
-    "express-handlebars": "^5.0.0",
-    "lodash": "^4.17.19",
-    "mysql2": "^2.1.0",
+    "express-handlebars": "^5.3.1",
+    "glob": "^13.0.6",
+    "lodash": "^4.17.21",
+    "minimatch": "^10.2.4",
+    "minimist": "^1.2.6",
+    "moment": "^2.29.4",
+    "mysql2": "^3.9.8",
+    "path-to-regexp": "^0.1.12",
     "prom-client": "^15.1.3",
-    "sequelize": "^6.3.0"
+    "semver": "^7.5.2",
+    "sequelize": "^6.37.8",
+    "tar": "^7.5.11",
+    "validator": "^13.15.22"
   },
   "devDependencies": {
     "eslint": "^7.4.0",
     "eslint-plugin-import": "^2.22.0",
-    "handlebars": "^4.5.0",
-    "nodemon": "^2.0.4"
+    "handlebars": "^4.7.7",
+    "nodemon": "^3.1.14"
   }
 }

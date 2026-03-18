@@ -29,3 +29,4 @@ Thumbs.db
 CLAUDE.md
 *.tfplan
 tfplan
+.secrets
