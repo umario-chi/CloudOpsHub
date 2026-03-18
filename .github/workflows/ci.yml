@@ -148,6 +148,7 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           trivyignores: .trivyignore
+          trivy-version: v0.62.0
 
       - name: Trivy scan Frontend image
         uses: aquasecurity/trivy-action@0.31.0
@@ -158,6 +159,7 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           trivyignores: .trivyignore
+          trivy-version: v0.62.0
 
       - name: Trivy scan Database image
         uses: aquasecurity/trivy-action@0.28.0
@@ -167,6 +169,7 @@ jobs:
           exit-code: 0
           severity: CRITICAL,HIGH
           trivyignores: .trivyignore
+          trivy-version: v0.62.0
 
       # ── Push to Docker Hub ──
       - name: Push Backend image
