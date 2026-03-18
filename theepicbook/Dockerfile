@@ -1,3 +1,5 @@
+# ── Backend Service ──
+# Handles Express API routes (/api/*) and Handlebars SSR (/, /cart, /gallery)
 # Stage 1: Install production dependencies
 FROM node:20-alpine AS deps
 RUN apk update && apk upgrade --no-cache
