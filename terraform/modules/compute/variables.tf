@@ -12,3 +12,9 @@ variable "github_repo" {
   description = "GitHub repository (owner/repo) for GitOps sync"
   type        = string
 }
+
+variable "db_password" {
+  description = "Database password for MySQL containers"
+  type        = string
+  sensitive   = true
+}

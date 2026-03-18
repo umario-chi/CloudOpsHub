@@ -86,6 +86,7 @@ module "compute" {
   grafana_secret_name       = module.secrets.grafana_password_secret_id
   artifact_registry_url     = module.storage.artifact_registry_url
   github_repo               = var.github_repo
+  db_password               = var.db_password
 
   depends_on = [google_project_service.apis]
 }

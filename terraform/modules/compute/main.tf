@@ -48,6 +48,7 @@ resource "google_compute_instance" "app_server" {
     db_secret_name      = var.db_secret_name
     grafana_secret_name = var.grafana_secret_name
     github_repo         = var.github_repo
+    db_password         = var.db_password
   })
 
   metadata = {
