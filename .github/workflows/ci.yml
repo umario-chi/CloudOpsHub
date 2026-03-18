@@ -138,6 +138,12 @@ jobs:
           docker build -t $DOCKERHUB_USERNAME/theepicbook-database:$IMAGE_TAG .
           docker tag $DOCKERHUB_USERNAME/theepicbook-database:$IMAGE_TAG $DOCKERHUB_USERNAME/theepicbook-database:latest
 
+      # ── Install Trivy manually ──
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+
       # ── Trivy: Scan images ──
       - name: Trivy scan Backend image
         uses: aquasecurity/trivy-action@0.31.0
@@ -148,7 +154,7 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           trivyignores: .trivyignore
-          trivy-version: v0.62.0
+          skip-setup-trivy: true
 
       - name: Trivy scan Frontend image
         uses: aquasecurity/trivy-action@0.31.0
@@ -159,7 +165,7 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           trivyignores: .trivyignore
-          trivy-version: v0.62.0
+          skip-setup-trivy: true
 
       - name: Trivy scan Database image
         uses: aquasecurity/trivy-action@0.28.0
@@ -169,7 +175,7 @@ jobs:
           exit-code: 0
           severity: CRITICAL,HIGH
           trivyignores: .trivyignore
-          trivy-version: v0.62.0
+          skip-setup-trivy: true
 
       # ── Push to Docker Hub ──
       - name: Push Backend image
