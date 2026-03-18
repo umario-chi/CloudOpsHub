@@ -142,40 +142,30 @@ jobs:
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy --version
 
 
       # ── Trivy: Scan images ──
       - name: Trivy scan Backend image
-        uses: aquasecurity/trivy-action@0.31.0
+        run: |
+          trivy image --severity CRITICAL,HIGH --exit-code 1 \
+            --ignorefile .trivyignore \
+            $DOCKERHUB_USERNAME/theepicbook-backend:$IMAGE_TAG
         continue-on-error: true
-        with:
-          image-ref: ${{ env.DOCKERHUB_USERNAME }}/theepicbook-backend:${{ env.IMAGE_TAG }}
-          format: table
-          exit-code: 1
-          severity: CRITICAL,HIGH
-          trivyignores: .trivyignore
-          skip-setup-trivy: true
 
       - name: Trivy scan Frontend image
-        uses: aquasecurity/trivy-action@0.31.0
+        run: |
+          trivy image --severity CRITICAL,HIGH --exit-code 1 \
+            --ignorefile .trivyignore \
+            $DOCKERHUB_USERNAME/theepicbook-backend:$IMAGE_TAG
         continue-on-error: true
-        with:
-          image-ref: ${{ env.DOCKERHUB_USERNAME }}/theepicbook-frontend:${{ env.IMAGE_TAG }}
-          format: table
-          exit-code: 1
-          severity: CRITICAL,HIGH
-          trivyignores: .trivyignore
-          skip-setup-trivy: true
 
       - name: Trivy scan Database image
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ${{ env.DOCKERHUB_USERNAME }}/theepicbook-database:${{ env.IMAGE_TAG }}
-          format: table
-          exit-code: 0
-          severity: CRITICAL,HIGH
-          trivyignores: .trivyignore
-          skip-setup-trivy: true
+        run: |
+          trivy image --severity CRITICAL,HIGH --exit-code 1 \
+            --ignorefile .trivyignore \
+            $DOCKERHUB_USERNAME/theepicbook-backend:$IMAGE_TAG
+        continue-on-error: true
 
       # ── Push to Docker Hub ──
       - name: Push Backend image
